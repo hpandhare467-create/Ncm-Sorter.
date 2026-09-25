@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NCM Processor</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap');
+
+*{box-sizing:border-box}
+:root{--bg:#050816;--panel:rgba(10,18,38,.78);--line:rgba(0,229,255,.22);--cyan:#00e5ff;--purple:#9b5cff;--green:#39ff88;--red:#ff3b6b;--text:#e9f7ff;--muted:#7f9bb0}
+body{margin:0;min-height:100vh;font-family:Rajdhani,Arial,sans-serif;color:var(--text);background:#050816;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(rgba(0,229,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.035) 1px,transparent 1px);background-size:42px 42px;pointer-events:none}
+body:after{content:"";position:fixed;width:520px;height:520px;left:-180px;top:-180px;border-radius:50%;background:rgba(0,229,255,.12);filter:blur(90px);pointer-events:none}
+.container{position:relative;width:92%;max-width:1180px;margin:34px auto;padding:30px;border:1px solid var(--line);border-radius:24px;background:var(--panel);backdrop-filter:blur(18px);box-shadow:0 0 70px rgba(0,229,255,.08),inset 0 0 40px rgba(155,92,255,.035)}
+.header{text-align:center;margin-bottom:28px}
+.badge{display:inline-block;padding:7px 14px;border:1px solid rgba(0,229,255,.35);border-radius:999px;color:var(--cyan);font-family:Orbitron,sans-serif;font-size:11px;letter-spacing:2px;box-shadow:0 0 18px rgba(0,229,255,.12)}
+h1{margin:13px 0 5px;font-family:Orbitron,sans-serif;font-size:clamp(28px,5vw,54px);letter-spacing:3px;background:linear-gradient(90deg,var(--cyan),#fff,var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 25px rgba(0,229,255,.18)}
+.description{color:var(--muted);font-size:16px;letter-spacing:.6px}
+.section{margin-top:22px}
+label{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-family:Orbitron,sans-serif;font-size:12px;letter-spacing:1.2px;color:#bcefff}
+textarea,input{width:100%;border:1px solid rgba(0,229,255,.22);outline:none;border-radius:14px;background:rgba(2,8,22,.8);color:var(--text);padding:15px;font:600 15px 'Courier New',monospace;box-shadow:inset 0 0 25px rgba(0,0,0,.25);transition:.25s}
+textarea{min-height:230px;resize:vertical}
+textarea:focus,input:focus{border-color:var(--cyan);box-shadow:0 0 22px rgba(0,229,255,.14),inset 0 0 20px rgba(0,0,0,.3)}
+textarea::placeholder,input::placeholder{color:#4d6577}
+button{border:0;border-radius:13px;padding:14px 20px;cursor:pointer;font:700 13px Orbitron,sans-serif;letter-spacing:1px;transition:.2s;position:relative;overflow:hidden}
+button:hover{transform:translateY(-2px)}
+button:active{transform:translateY(0)}
+.process-btn{width:100%;margin-top:14px;color:#001018;background:linear-gradient(90deg,var(--cyan),#73f6ff);box-shadow:0 0 25px rgba(0,229,255,.22)}
+.remove-btn{width:100%;margin-top:14px;color:white;background:linear-gradient(90deg,#ff315e,#9b5cff);box-shadow:0 0 25px rgba(255,59,107,.15)}
+.clear-btn{width:100%;margin-top:14px;color:#ccefff;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12)}
+.result-box{position:relative;background:rgba(1,7,19,.72);border:1px solid rgba(0,229,255,.17);border-radius:15px;padding:18px;min-height:92px;font:600 15px/2 'Courier New',monospace;color:#bff8ff;white-space:pre-wrap;word-break:break-word;box-shadow:inset 0 0 25px rgba(0,0,0,.25)}
+.result-box:before{content:"OUTPUT // LIVE";position:absolute;right:12px;top:8px;font:600 8px Orbitron,sans-serif;color:#426476;letter-spacing:1px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px}
+.stat{padding:20px;border-radius:17px;border:1px solid rgba(0,229,255,.14);background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(155,92,255,.07));text-align:center;box-shadow:inset 0 0 25px rgba(0,0,0,.18)}
+.stat-number{font:800 34px Orbitron,sans-serif;color:var(--cyan);text-shadow:0 0 18px rgba(0,229,255,.35)}
+.stat-label{margin-top:5px;font:600 11px Orbitron,sans-serif;letter-spacing:1.4px;color:var(--muted)}
+.message{margin-top:12px;min-height:20px;font:700 14px Orbitron,sans-serif;text-align:center}
+@keyframes pulse{50%{box-shadow:0 0 35px rgba(0,229,255,.35)}}
+.process-btn:hover{animation:pulse 1s infinite}
+@media(max-width:700px){.container{width:95%;padding:19px;margin:18px auto}.stats{grid-template-columns:1fr}h1{letter-spacing:1px}.description{font-size:14px}}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header"><div class="badge">NCM CONTROL CENTER // ONLINE</div><h1>NCM PROCESSOR</h1><div class="description">
+Remove duplicates • keep first 4 digits • remove selected NCM • 6 NCMs per row</div></div>
+
+<div class="section">
+
+<label for="ncmInput"><span>INPUT STREAM</span><span>RAW NCM DATA</span></label>
+
+<textarea id="ncmInput" placeholder="Paste NCMs here..."></textarea>
+
+<button class="process-btn" onclick="processNCMs()">
+Process NCMs
+</button>
+
+</div>
+
+<div class="section">
+
+<label><span>DEDUPLICATED DATA</span><span>SCAN RESULT</span></label>
+
+<div id="uniqueResult" class="result-box">
+No data processed yet.
+</div>
+
+</div>
+
+<div class="stats">
+
+<div class="stat">
+<div id="totalCount" class="stat-number">0</div>
+<div class="stat-label">Unique NCMs</div>
+</div>
+
+<div class="stat">
+<div id="duplicateCount" class="stat-number">0</div>
+<div class="stat-label">Duplicates Removed</div>
+</div>
+
+</div>
+
+<div class="section">
+
+<label for="removeInput"><span>EXCLUSION TARGET</span><span>4-DIGIT CODE</span></label>
+
+<input type="text" id="removeInput" placeholder="Example: 8413 or 841398">
+
+<button class="remove-btn" onclick="removeNCM()">
+Remove NCM
+</button>
+
+<div id="message" class="message"></div>
+
+</div>
+
+<div class="section">
+
+<label><span>FINAL NCM MATRIX</span><span>6 / ROW</span></label>
+
+<div id="finalResult" class="result-box">
+No NCM removed yet.
+</div>
+
+</div>
+
+<div class="section">
+
+<button class="clear-btn" onclick="clearAll()">
+Clear All
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+let ncmList = [];
+
+function processNCMs() {
+
+    const input = document.getElementById("ncmInput").value;
+
+    if (input.trim() === "") {
+        alert("Please enter NCMs.");
+        return;
+    }
+
+    const cleanedInput = input.replace(/\n/g, ",");
+
+    const values = cleanedInput.split(",");
+
+    const uniqueSet = new Set();
+
+    let totalEntries = 0;
+
+    values.forEach(function(value) {
+
+        value = value.trim();
+
+        if (value !== "") {
+
+            totalEntries++;
+
+            value = value.replace(/\D/g, "");
+
+            if (value.length >= 4) {
+
+                const ncm = value.substring(0, 4);
+
+                uniqueSet.add(ncm);
+            }
+        }
+    });
+
+    ncmList = Array.from(uniqueSet);
+
+    const duplicatesRemoved =
+        totalEntries - ncmList.length;
+
+    document.getElementById("totalCount").textContent =
+        ncmList.length;
+
+    document.getElementById("duplicateCount").textContent =
+        duplicatesRemoved;
+
+    displayNCMs(ncmList, "uniqueResult");
+
+    displayNCMs(ncmList, "finalResult");
+
+    document.getElementById("message").textContent = "";
+}
+
+function removeNCM() {
+
+    if (ncmList.length === 0) {
+        alert("Please process NCMs first.");
+        return;
+    }
+
+    let removeValue =
+        document.getElementById("removeInput").value.trim();
+
+    if (removeValue === "") {
+        alert("Please enter an NCM to remove.");
+        return;
+    }
+
+    removeValue = removeValue.replace(/\D/g, "");
+
+    if (removeValue.length >= 4) {
+        removeValue = removeValue.substring(0, 4);
+    } else {
+        alert("Please enter at least 4 digits.");
+        return;
+    }
+
+    const index = ncmList.indexOf(removeValue);
+
+    if (index !== -1) {
+
+        ncmList.splice(index, 1);
+
+        document.getElementById("message").textContent =
+            removeValue + " removed successfully.";
+
+        document.getElementById("message").style.color =
+            "green";
+
+    } else {
+
+        document.getElementById("message").textContent =
+            removeValue + " was not found.";
+
+        document.getElementById("message").style.color =
+            "red";
+    }
+
+    displayNCMs(ncmList, "finalResult");
+
+    document.getElementById("totalCount").textContent =
+        ncmList.length;
+
+    document.getElementById("removeInput").value = "";
+}
+
+function displayNCMs(list, elementId) {
+
+    const resultBox =
+        document.getElementById(elementId);
+
+    if (list.length === 0) {
+
+        resultBox.textContent =
+            "No NCMs available.";
+
+        return;
+    }
+
+    let rows = [];
+
+    for (let i = 0; i < list.length; i += 6) {
+
+        const row = list.slice(i, i + 6);
+
+        rows.push(row.join(","));
+    }
+
+    resultBox.textContent =
+        rows.join("\n");
+}
+
+function clearAll() {
+
+    document.getElementById("ncmInput").value = "";
+
+    document.getElementById("removeInput").value = "";
+
+    document.getElementById("uniqueResult").textContent =
+        "No data processed yet.";
+
+    document.getElementById("finalResult").textContent =
+        "No NCM removed yet.";
+
+    document.getElementById("message").textContent = "";
+
+    document.getElementById("totalCount").textContent = "0";
+
+    document.getElementById("duplicateCount").textContent = "0";
+
+    ncmList = [];
+}
+
+</script>
+
+</body>
+</html>
